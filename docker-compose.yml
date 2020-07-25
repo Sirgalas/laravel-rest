@@ -1,0 +1,89 @@
+version: '3.6'
+services:
+
+  nginx:
+    image: nginx:1.16-alpine
+    depends_on:
+      - php-fpm
+    ports:
+      - "8200:80"
+      - "8243:443"
+    volumes:
+      - "./:/www"
+      - "./docker/nginx/conf.d:/etc/nginx/conf.d"
+    networks:
+      - rest
+
+  node:
+    build: docker/nodejs
+    depends_on:
+      - php-fpm
+    volumes:
+      - "./:/www"
+    networks:
+      - rest
+    ports:
+      - "8201:3000"
+
+  php-fpm:
+    build: docker/php-fpm
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - "./:/www"
+    environment:
+      - DOCKER_PHP_CONFIG=${DOCKER_PHP_CONFIG}
+      - DOCKER_XDEBUG=${DOCKER_XDEBUG}
+      - DOCKER_SUPERVISOR=${DOCKER_SUPERVISOR}
+      - DOCKER_CRON=${DOCKER_CRON}
+    networks:
+        - rest
+
+  db:
+    image: mysql
+    #command: --default-authentication-plugin=mysql_native_password
+    #restart: always
+    volumes:
+      - ./docker/mysql/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD:${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE:${DB_DATABASE}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "8202:3306"
+
+  test-db:
+    image: mysql
+    #command: --default-authentication-plugin=mysql_native_password
+    #restart: always
+    volumes:
+      - ./docker/mysql/test-mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD:${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE:${DB_DATABASE_TEST}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "8203:3306"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+    - "8204:8080"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8205:8025"
+    depends_on:
+      - php-fpm
+    networks:
+      - rest
+
+networks:
+  rest:
+    driver: bridge
