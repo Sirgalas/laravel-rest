@@ -1,30 +1,6 @@
 version: '3.6'
 services:
 
-  nginx:
-    image: nginx:1.16-alpine
-    depends_on:
-      - php-fpm
-    ports:
-      - "8200:80"
-      - "8243:443"
-    volumes:
-      - "./:/www"
-      - "./docker/nginx/conf.d:/etc/nginx/conf.d"
-    networks:
-      - rest
-
-  node:
-    build: docker/nodejs
-    depends_on:
-      - php-fpm
-    volumes:
-      - "./:/www"
-    networks:
-      - rest
-    ports:
-      - "8201:3000"
-
   php-fpm:
     build: docker/php-fpm
     depends_on:
@@ -41,48 +17,70 @@ services:
     networks:
         - rest
 
-  db:
-    image: mysql
-    #command: --default-authentication-plugin=mysql_native_password
-    #restart: always
-    volumes:
-      - ./docker/mysql/mysql:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD:${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE:${DB_DATABASE}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+  nginx:
+    image: nginx:1.16-alpine
+    depends_on:
+      - php-fpm
     ports:
-      - "8202:3306"
+      - "8200:80"
+      - "8243:443"
+    volumes:
+      - "./:/www"
+      - "./docker/nginx/conf.d:/etc/nginx/conf.d"
+    networks:
+      - rest
+
+  db:
+    image: postgres:12-alpine
+    volumes:
+      - ./docker/postgres/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_DATABASE}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "8201:5432"
+    networks:
+      - rest
 
   test-db:
-    image: mysql
-    #command: --default-authentication-plugin=mysql_native_password
-    #restart: always
+    image: postgres:12-alpine
     volumes:
-      - ./docker/mysql/test-mysql:/var/lib/mysql
+      - ./docker/postgres/postgres-test:/var/lib/postgresql/data
     environment:
-      - MYSQL_ROOT_PASSWORD:${DB_ROOT_PASSWORD}
-      - MYSQL_DATABASE:${DB_DATABASE_TEST}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE_TEST}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - "8203:3306"
+      - "8202:5432"
+    networks:
+      - rest
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8203:8025"
+    depends_on:
+      - php-fpm
+    networks:
+      - rest
+
+  node:
+    build: docker/nodejs
+    depends_on:
+      - php-fpm
+    volumes:
+      - "./:/www"
+    networks:
+      - rest
+    ports:
+      - "8204:3000"
 
   adminer:
     image: adminer
     restart: always
     ports:
-    - "8204:8080"
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "8205:8025"
-    depends_on:
-      - php-fpm
-    networks:
-      - rest
+      - "8205:8080"
 
 networks:
   rest:

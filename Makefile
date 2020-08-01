@@ -20,6 +20,8 @@ ps: # show started containers and their status
 
 build: # build all dockerfile, if not built yet
 	@docker-compose -f ${DOCKER_CONFIG} build
+buildd: # build all dockerfile, if not built yet
+	@docker-compose -f ${DOCKER_CONFIG} build -d
 
 
 connect_app: # php-fpm command line
@@ -60,16 +62,16 @@ composer_dump: # composer dump-autoload
 	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm composer dump-autoload
 
 test: # run all tests
-	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php vendor/bin/phpunit
+	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php vendor/bin/phpunit --debug
 
 create_controller: # create controller name=[controllerName]
 	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:controller $(name)
 
 create_model: # create model name=[modelName]
-	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:model Models/$(name) -m
+	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:model Entities/$(name) -m
 
 create_seeder: # create seeder name=[seederName]
 	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:seeder $(name)TableSeeder
 
-create_test: # create seeder name=[seederName]
-	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:test $(name)
+create_test: # create test name=[seederName]
+	@docker-compose -f ${DOCKER_CONFIG} exec -u www -w /www/app php-fpm php artisan make:test $(name)Test

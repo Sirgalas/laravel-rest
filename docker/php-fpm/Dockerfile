@@ -52,7 +52,11 @@ RUN pecl install xdebug-2.7.1 \
 	# 		memcached \
 	\
 RUN apk del --no-cache --no-network --purge .make-ext-deps
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
+RUN docker-php-ext-install pdo_pgsql pgsql
+RUN apk add --no-cache pcre-dev $PHPIZE_DEPS \
+        && pecl install redis \
+        && docker-php-ext-enable redis.so
 
 RUN set -xe \
     	&& apk add --no-cache \
